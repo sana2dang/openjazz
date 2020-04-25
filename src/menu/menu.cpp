@@ -35,6 +35,9 @@
 #include "io/sound.h"
 #include "loop.h"
 #include "util.h"
+#ifdef _3DS
+	#include "platforms/3ds.h"
+#endif
 
 #include <string.h>
 
@@ -174,6 +177,29 @@ int Menu::generic (const char** optionNames, int options, int& chosen) {
 int Menu::textInput (const char* request, char*& text) {
 
 	char *input;
+
+#ifdef _3DS
+
+	int res;
+
+	if (strcmp(request, "ip address:") == 0)
+		res = N3DS_InputIP(text, input);
+	else
+		res = N3DS_InputString(request, text, input);
+
+	if (res) {
+
+		playSound(S_ORB);
+
+		delete[] text;
+		text = input;
+
+		return E_NONE;
+
+	}
+
+#else
+
 	int count, terminate, character, x, y;
 	unsigned int cursor;
 
@@ -292,7 +318,8 @@ int Menu::textInput (const char* request, char*& text) {
 
 	delete[] input;
 
+#endif
+
 	return E_RETURN;
 
 }
-
