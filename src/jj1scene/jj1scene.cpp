@@ -454,6 +454,7 @@ int JJ1Scene::play () {
 
 					dst.x = pages[sceneIndex].bgX[bg] + ((canvasW - SW) >> 1);
 					dst.y = pages[sceneIndex].bgY[bg] + ((canvasH - SH) >> 1);
+					SDL_SetPaletteColors(image->image->format->palette, canvas->format->palette->colors, 0, 256);
 					SDL_BlitSurface(image->image, NULL, canvas, &dst);
 
 				}
@@ -474,6 +475,7 @@ int JJ1Scene::play () {
 					dst.x = (canvasW - SW) >> 1;
 					dst.y = (canvasH - SH) >> 1;
 					frameDelay = 1000 / (pages[sceneIndex].animSpeed >> 8);
+					SDL_SetPaletteColors(animation->background->format->palette, canvas->format->palette->colors, 0, 256);
 					SDL_BlitSurface(animation->background, NULL, canvas, &dst);
 					currentFrame = animation->sceneFrames;
 					SDL_Delay(frameDelay);
@@ -511,6 +513,8 @@ int JJ1Scene::play () {
 
 				dst.x = (canvasW - SW) >> 1;
 				dst.y = (canvasH - SH) >> 1;
+				
+				SDL_SetPaletteColors(animation->background->format->palette, canvas->format->palette->colors, 0, 256);
 				SDL_BlitSurface(animation->background, NULL, canvas, &dst);
 
 				playSound(currentFrame->soundId);
@@ -609,7 +613,7 @@ int JJ1Scene::play () {
 			// Drop shadow
 			font->mapPalette(0, 256, 0, 1);
 			font->showSceneString(text->text, xOffset + 1, yOffset + 1);
-			font->restorePalette();
+			font->setPalette(canvas->format->palette->colors);
 
 			// Text itself
 			font->showSceneString(text->text, xOffset, yOffset);

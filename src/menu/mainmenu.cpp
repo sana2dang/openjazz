@@ -30,6 +30,7 @@
 #include "io/controls.h"
 #include "io/gfx/video.h"
 #include "io/sound.h"
+#include "io/gfx/font.h"
 #include "jj1scene/jj1scene.h"
 #include "loop.h"
 #include "util.h"
@@ -52,16 +53,15 @@ MainMenu::MainMenu () {
 
 		file = new File("openjazz.000", false);
 
-		logo = file->loadSurface(64, 40);
-
-		delete file;
-
 	} catch (int e) {
 
-		logo = NULL;
+		throw e;
 
 	}
 
+	logo = file->loadSurface(64, 40);
+
+	delete file;
 
 
 	// Load the menu graphics
@@ -72,7 +72,7 @@ MainMenu::MainMenu () {
 
 	} catch (int e) {
 
-		if (logo) SDL_FreeSurface(logo);
+		SDL_FreeSurface(logo);
 
 		throw e;
 
@@ -114,9 +114,19 @@ MainMenu::MainMenu () {
 
 	}
 
+#ifdef SDL2
+    SDL_SetPaletteColors(logo->format->palette, palette, 0, 256);
+	SDL_SetPaletteColors(background->format->palette, palette, 0, 256);
+	SDL_SetPaletteColors(highlight->format->palette, palette, 0, 256);
+	
+	SDL_SetColorKey(background, SDL_TRUE, 0);
+	SDL_SetColorKey(highlight, SDL_TRUE, 0);
+	SDL_SetColorKey(logo, SDL_TRUE, 28);
+#else
 	SDL_SetColorKey(background, SDL_SRCCOLORKEY, 0);
 	SDL_SetColorKey(highlight, SDL_SRCCOLORKEY, 0);
-	if (logo) SDL_SetColorKey(logo, SDL_SRCCOLORKEY, 28);
+	SDL_SetColorKey(logo, SDL_SRCCOLORKEY, 28);
+#endif // SDL2
 
 	gameMenu = new GameMenu(file);
 
@@ -134,7 +144,7 @@ MainMenu::~MainMenu () {
 
 	SDL_FreeSurface(background);
 	SDL_FreeSurface(highlight);
-	if (logo) SDL_FreeSurface(logo);
+	SDL_FreeSurface(logo);
 
 	delete gameMenu;
 
@@ -424,12 +434,9 @@ int MainMenu::main () {
 		plasma.draw();
 
 
-		if (logo)
-		{
-			dst.x = (canvasW >> 2) - 72;
-			dst.y = canvasH - (canvasH >> 2);
-			SDL_BlitSurface(logo, NULL, canvas, &dst);
-		}
+		dst.x = (canvasW >> 2) - 72;
+		dst.y = canvasH - (canvasH >> 2);
+		SDL_BlitSurface(logo, NULL, canvas, &dst);
 
 		dst.x = (canvasW - SW) >> 1;
 		dst.y = (canvasH - SH) >> 1;
@@ -439,8 +446,35 @@ int MainMenu::main () {
 		dst.y = ((canvasH - SH) >> 1) + options[option].y;
 		SDL_BlitSurface(highlight, options + option, canvas, &dst);
 
-	}
+		//Show Autor of the Port to the switch
+		
+		SDL_Color Col_red[256]; 
+		SDL_Color Col_green[256]; 
+        int count;
+		for (count = 0; count < 256; count++)
+		{
+			Col_red[count].r = 255;
+			Col_red[count].g = 0;
+			Col_red[count].b = 0;
+			Col_red[count].a = 150;
 
+			Col_green[count].r = 0;
+			Col_green[count].g = 255;
+			Col_green[count].b = 0;
+			Col_green[count].a = 150;
+		}
+		drawRect(canvasW - 146, 0, 228, 13, 79);
+		fontmn2->showString_2("ported by krank", canvasW - 144, 1.5);
+		fontmn2->setPalette(Col_red);
+		
+		// Show OpenjazzNX
+		fontmn2->showString("NX", canvasW - 265, 180);
+		
+		fontmn2->setPalette(Col_green);
+
+
+	}
+    
 	return E_NONE;
 
 }

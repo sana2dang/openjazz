@@ -25,7 +25,13 @@
 #include "level/level.h"
 #include "util.h"
 #include "io/gfx/video.h"
+#define SDL2
+
+#ifdef SDL2
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 
 
 /**

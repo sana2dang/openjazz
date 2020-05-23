@@ -361,7 +361,12 @@ int JJ2Level::loadTiles (char* fileName) {
 	}
 
 	tileSet = createSurface(tileBuffer, TTOI(1), TTOI(tiles));
+	
+	#ifdef SDL2
+	SDL_SetColorKey(tileSet, SDL_TRUE, 0);
+	#else
 	SDL_SetColorKey(tileSet, SDL_SRCCOLORKEY, 0);
+	#endif
 
 	// Flip tiles
 	for (count = 0; count < TTOI(tiles); count++) {
@@ -377,7 +382,12 @@ int JJ2Level::loadTiles (char* fileName) {
 	}
 
 	flippedTileSet = createSurface(tileBuffer, TTOI(1), TTOI(tiles));
+
+	#ifdef SDL2
+	SDL_SetColorKey(flippedTileSet, SDL_TRUE, 0);
+	#else
 	SDL_SetColorKey(flippedTileSet, SDL_SRCCOLORKEY, 0);
+	#endif
 
 	delete[] tileBuffer;
 
@@ -598,6 +608,7 @@ int JJ2Level::load (char *fileName, bool checkpoint) {
 	x = (canvasW >> 1) - ((strlen(string) + 6) << 2);
 	x = fontmn2->showString("LOADING ", x - 60, (canvasH >> 1) - 16);
 	fontmn2->showString(string, x, (canvasH >> 1) - 16);
+	fontmn2->setPalette(palette);
 
 	delete[] string;
 

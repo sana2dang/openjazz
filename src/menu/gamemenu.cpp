@@ -49,7 +49,11 @@ GameMenu::GameMenu (File *file) {
 	// Load the difficulty graphics
 	file->loadPalette(menuPalette);
 	difficultyScreen = file->loadSurface(SW, SH);
+	#ifdef SDL2
+	SDL_SetColorKey(difficultyScreen, SDL_TRUE, 0);
+	#else
 	SDL_SetColorKey(difficultyScreen, SDL_SRCCOLORKEY, 0);
+	#endif
 
 	// Default difficulty setting
 	difficulty = 1;
@@ -192,6 +196,8 @@ int GameMenu::playNewGame (GameModeType mode, char* firstLevel) {
  *
  * @return Error code
  */
+
+#define GREEN (SDL_Color){0,255,0}
 int GameMenu::newGameDifficulty (GameModeType mode, char* firstLevel) {
 
 	const char *options[4] = {"easy", "medium", "hard", "turbo"};
@@ -199,6 +205,7 @@ int GameMenu::newGameDifficulty (GameModeType mode, char* firstLevel) {
 	int x, y, count;
 
 	video.setPalette(menuPalette);
+	//video.setPalette(palette);
 
 	while (true) {
 
@@ -235,24 +242,31 @@ int GameMenu::newGameDifficulty (GameModeType mode, char* firstLevel) {
 
 		for (count = 0; count < 4; count++) {
 
-			if (count == difficulty) fontmn2->mapPalette(240, 8, 114, 16);
+			if (count == difficulty) 
+			{
+				
+				fontmn2->setPalette(canvas->format->palette->colors);
+			}
+			fontmn2->showString(options[count], canvasW >> 2, (canvasH >> 1) + (count << 4) - 32);
+			fontmn2->mapPalette(240, 8, 114, 16);
 
-			fontmn2->showString(options[count], canvasW >> 2,
-				(canvasH >> 1) + (count << 4) - 32);
 
-			if (count == difficulty) fontmn2->restorePalette();
+			//if (count == difficulty) fontmn2->setPalette(menuPalette);
 
 		}
-
+		
 		src.x = (difficulty & 1) * 160;
 		src.y = (difficulty & 2) * 50;
 		src.w = 160;
 		src.h = 100;
 		dst.x = (canvasW >> 1) - 40;
 		dst.y = (canvasH >> 1) - 50;
+		SDL_SetPaletteColors(difficultyScreen->format->palette, canvas->format->palette->colors, 0, 256);
 		SDL_BlitSurface(difficultyScreen, &src, canvas, &dst);
 
 		showEscString();
+		
+
 
 	}
 
@@ -275,8 +289,14 @@ int GameMenu::newGameDifficulty (GameModeType mode, int levelNum, int worldNum) 
 	char* firstLevel;
 	int ret;
 
-	if (levelNum == -1) firstLevel = createFileName("BONUSMAP", worldNum);
-	else firstLevel = createFileName("LEVEL", levelNum, worldNum);
+    // ToDo Fix Bonus Level Crash on Finish or exit
+	// i have skipped the bonus in game code - game not use bonus level in game play, eh who needs that bonus ?
+	//if (levelNum == -1) 
+	//{
+		//firstLevel = createFileName("BONUSMAP", worldNum);
+	//}
+	//else 
+	firstLevel = createFileName("LEVEL", levelNum, worldNum);
 
 	ret = newGameDifficulty(mode, firstLevel);
 
@@ -301,6 +321,7 @@ int GameMenu::loadGame () {
 	worldNum = levelNum = option = 0;
 
 	video.setPalette(menuPalette);
+	//video.setPalette(palette);
 
 	while (true) {
 
@@ -333,6 +354,7 @@ int GameMenu::loadGame () {
 			if (newGameDifficulty(M_SINGLE, levelNum, worldNum) == E_QUIT) return E_QUIT;
 
 			video.setPalette(menuPalette);
+			//video.setPalette(palette);
 
 		}
 
@@ -350,21 +372,21 @@ int GameMenu::loadGame () {
 
 		video.clearScreen(15);
 
-		if (option == 0) fontmn2->mapPalette(240, 8, 114, 16);
+		if (option == 0) fontmn2->setPalette(menuPalette);;
 		fontmn2->showString("choose world:", 32, canvasH / 3);
 		fontmn2->showNumber(worldNum, 208, canvasH / 3);
 
-		if (option == 0) fontmn2->restorePalette();
-		else fontmn2->mapPalette(240, 8, 114, 16);
+		if (option == 0) fontmn2->mapPalette(240, 8, 114, 16);
+		else fontmn2->setPalette(menuPalette);
 
 		fontmn2->showString("choose level:", 32, (canvasH << 1) / 3);
 		if (levelNum >= 0) fontmn2->showNumber(levelNum, 208, (canvasH << 1) / 3);
 		else fontmn2->showString("bonus", 172, (canvasH << 1) / 3);
 
-		if (option != 0) fontmn2->restorePalette();
-
+		if (option != 0) fontmn2->mapPalette(240, 8, 114, 16);
+        //fontmn2->setPalette(menuPalette);
 		showEscString();
-
+        
 	}
 
 	return E_NONE;
@@ -440,6 +462,7 @@ int GameMenu::selectEpisode (GameModeType mode, int episode) {
 	}
 
 	video.setPalette(palette);
+	//video.setPalette(palette);
 
 	return E_NONE;
 
@@ -464,6 +487,7 @@ int GameMenu::newGameEpisode (GameModeType mode) {
 	int episode, count, x, y;
 
 	video.setPalette(palette);
+	//video.setPalette(palette);
 
 	for (count = 0; count < 10; count++) {
 
@@ -475,16 +499,24 @@ int GameMenu::newGameEpisode (GameModeType mode) {
 		exists[count] = fileExists(check);
 		delete[] check;
 
-		if (exists[count]) video.restoreSurfacePalette(episodeScreens[count]);
+		if (exists[count]) 
+		SDL_SetPaletteColors(episodeScreens[count]->format->palette, canvas->format->palette->colors, 0, 256);
+		#ifdef SDL2
+		else {
+			SDL_SetPaletteColors (episodeScreens[count]->format->palette, canvas->format->palette->colors, 0, 256);
+		}
+		#else
 		else SDL_SetPalette(episodeScreens[count], SDL_LOGPAL, greyPalette, 0, 256);
-
+		#endif // SDL2
 	}
 
 	if (mode == M_SINGLE) {
 
-		check = createFileName("BONUSMAP", 0);
-		exists[10] = fileExists(check);
-		delete[] check;
+        // ToDo Fix Bonus Level Crash on Finish or exit
+		// i have skipped the bonus in game code - game not use bonus level in game play, eh who needs that bonus ?
+		//check = createFileName("BONUSMAP", 0);
+		//exists[10] = fileExists(check);
+		//delete[] check;
 
 	} else exists[10] = false;
 
@@ -542,11 +574,13 @@ int GameMenu::newGameEpisode (GameModeType mode) {
 		dst.y = (canvasH - 110) >> 1;
 
 		if ((episode < episodes - 1) || (episode < 6)) {
-
+            
+			SDL_SetPaletteColors(episodeScreens[episode]->format->palette, canvas->format->palette->colors, 0, 256);
 			SDL_BlitSurface(episodeScreens[episode], NULL, canvas, &dst);
 
 		} else if ((episode == 10) && (episodes > 6)) {
 
+	        SDL_SetPaletteColors(episodeScreens[episodes - 1]->format->palette, canvas->format->palette->colors, 0, 256);
 			SDL_BlitSurface(episodeScreens[episodes - 1], NULL, canvas, &dst);
 
 		}
@@ -562,15 +596,24 @@ int GameMenu::newGameEpisode (GameModeType mode) {
 			} else if (!exists[count])
 				fontmn2->mapPalette(240, 8, 94, -16);
 
-			fontmn2->showString(options[count], canvasW >> 3,
-				(canvasH >> 1) + (count << 4) - 92);
+			fontmn2->showString(options[count], canvasW >> 3, (canvasH >> 1) + (count << 4) - 92);
+			
 
 			if ((count == episode) || (!exists[count]))
 				fontmn2->mapPalette(240, 8, 9, 80);
 
 		}
-
+        
 		fontbig->showString(ESCAPE_STRING, canvasW - 100, canvasH - 12);
+		SDL_Color Col_red[256]; 
+        int count;
+		for (count = 0; count < 256; count++)
+		{
+			Col_red[count].r = 255;
+			Col_red[count].g = 0;
+			Col_red[count].b = 0;
+		}
+		fontbig->setPalette(Col_red);
 
 	}
 
