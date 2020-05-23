@@ -1054,6 +1054,7 @@ void JJ1LevelPlayer::draw (unsigned int ticks, int change) {
 		panelBigFont->showString(player->name,
 			FTOI(drawX + PXO_MID) - (panelBigFont->getStringWidth(player->name) >> 1),
 			FTOI(drawY - F32 - F16));
+			panelBigFont->setPalette(palette);
 
 	return;
 

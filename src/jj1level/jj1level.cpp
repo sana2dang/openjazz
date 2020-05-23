@@ -143,8 +143,6 @@ JJ1Level::~JJ1Level () {
 
 	resampleSounds();
 
-	video.setTitle(NULL);
-
 	return;
 
 }
@@ -651,22 +649,25 @@ void JJ1Level::flash (unsigned char red, unsigned char green, unsigned char blue
  */
 int JJ1Level::playBonus () {
 
-	char *bonusFile;
-	int ret;
+	//char *bonusFile;
+	//int ret;
 
-	if (!localPlayer->getJJ1LevelPlayer()->hasGem()) return E_NONE;
+	//if (!localPlayer->getJJ1LevelPlayer()->hasGem()) return E_NONE;
 
-	delete paletteEffects;
-	paletteEffects = NULL;
+	//delete paletteEffects;
+	//paletteEffects = NULL;
 
-	bonusFile = createFileName("BONUSMAP", 0);
+    // ToDo Fix Bonus Level Crash on Finish or exit
+	// i have skipped the bonus in game code - game not use bonus level in game play, eh who needs that bonus ?
+	//bonusFile = createFileName("BONUSMAP", 0);
 
 	// If the gem has been collected, play the bonus level
-	ret = game->playLevel(bonusFile);
+	//ret = game->playLevel(bonusFile);
 
-	delete[] bonusFile;
+	//delete[] bonusFile;
 
-	return ret;
+	//return ret;
+	return 0;
 
 }
 
@@ -830,10 +831,22 @@ int JJ1Level::play () {
 
 		// If paused, draw "PAUSE"
 		if (pmessage && !pmenu)
+		{
 			font->showString("pause", (canvasW >> 1) - 44, 32);
+			font->setPalette(palette);
+			setMusicVolume(0);
+			setSoundVolume(0);
+		}
+		else
+		{
+			setSoundVolume(64);
+			setMusicVolume(128);
+		}
+			
 
 		// If paused, silence music
-		pauseMusic(pmessage && !pmenu);
+		//pauseMusic(pmessage && !pmenu);
+		
 
 		if (stage == LS_END) {
 
@@ -902,6 +915,8 @@ int JJ1Level::play () {
 
 			font->showString("score", (canvasW >> 1) - 152, (canvasH >> 1) + 40);
 			font->showNumber(localPlayer->getScore(), (canvasW >> 1) + 124, (canvasH >> 1) + 40);
+
+			font->setPalette(palette);
 
 		}
 

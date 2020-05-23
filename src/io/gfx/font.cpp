@@ -5,17 +5,21 @@
  *
  * Part of the OpenJazz project
  *
- * @par History:
- * - 23rd August 2005: Created font.c
- * - 3rd February 2009: Renamed font.c to font.cpp
+ * @section History
+ * 23rd August 2005: Created font.c
+ * 3rd February 2009: Renamed font.c to font.cpp
  *
- * @par Licence:
- * Copyright (c) 2005-2017 Alister Thomson
+ * @section Licence
+ * Copyright (c) 2005-2012 Alister Thomson
  *
  * OpenJazz is distributed under the terms of
  * the GNU General Public License, version 2.0
  *
- * @par Description:
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * @section Description
  * Deals with the loading, displaying and freeing of screen fonts.
  *
  */
@@ -52,6 +56,8 @@ Font::Font (const char* fileName) {
 		throw e;
 
 	}
+
+	storedPalette = SDL_AllocPalette(256);
 
 	fileSize = file->getSize();
 
@@ -100,7 +106,7 @@ Font::Font (const char* fileName) {
 
 		} else characters[count] = createSurface(blank, 3, 1);
 
-		SDL_SetColorKey(characters[count], SDL_SRCCOLORKEY, 0);
+		SDL_SetColorKey(characters[count], SDL_TRUE, 0);
 
 	}
 
@@ -174,7 +180,7 @@ Font::Font (unsigned char* pixels, bool big) {
 
 		characters[count] = createSurface(chrPixels, 8, lineHeight);
 
-		if (big) SDL_SetColorKey(characters[count], SDL_SRCCOLORKEY, 31);
+		if (big) SDL_SetColorKey(characters[count], SDL_TRUE, 31);
 
 	}
 
@@ -233,14 +239,13 @@ Font::Font (bool bonus) {
 
 	try {
 
-		file = new File(bonus? "BONUS.000": "FONTS.000", false);
+		file = new File(bonus? "BONUS.000" : "FONTS.000", false);
 
 	} catch (int e) {
 
 		throw e;
 
 	}
-
 
 	fileSize = file->getSize();
 
@@ -289,7 +294,7 @@ Font::Font (bool bonus) {
 		pixels = file->loadPixels(width * height);
 
 		characters[count] = createSurface(pixels, width, height);
-		SDL_SetColorKey(characters[count], SDL_SRCCOLORKEY, 254);
+		SDL_SetColorKey(characters[count], SDL_TRUE, 254);
 
 		delete[] pixels;
 
@@ -305,7 +310,7 @@ Font::Font (bool bonus) {
 	pixels = new unsigned char[3];
 	memset(pixels, 254, 3);
 	characters[nCharacters] = createSurface(pixels, 3, 1);
-	SDL_SetColorKey(characters[nCharacters], SDL_SRCCOLORKEY, 254);
+	SDL_SetColorKey(characters[nCharacters], SDL_TRUE, 254);
 	delete[] pixels;
 
 
@@ -414,6 +419,46 @@ int Font::showString (const char* string, int x, int y) {
 
 }
 
+int Font::showString_2(const char* string, int x, int y) {
+
+	SDL_Surface* surface;
+	SDL_Rect dst;
+	unsigned int count;
+	int xOffset, yOffset;
+
+	// Determine the position at which to draw the first character
+	xOffset = x;
+	yOffset = y;
+
+	// Go through each character of the string
+	for (count = 0; string[count]; count++) {
+
+		if (string[count] == '\n') {
+
+			xOffset = x;
+			yOffset += lineHeight;
+
+		} else {
+
+			// Determine the character's position on the screen
+			dst.y = yOffset;
+			dst.x = xOffset;
+
+			// Determine the character's surface
+			surface = characters[int(map[int(string[count])])];
+       
+			// Draw the character to the screen
+			SDL_BlitSurface(surface, NULL, canvas, &dst);
+
+			xOffset += surface->w + 2;
+
+		}
+
+	}
+
+	return xOffset;
+
+}
 
 /**
  * Draw a JJ1 cutscene string using the font.
@@ -545,6 +590,8 @@ void Font::showNumber (int n, int x, int y) {
  */
 void Font::mapPalette (int start, int length, int newStart, int newLength) {
 
+	SDL_SetPaletteColors(storedPalette, characters[0]->format->palette->colors, 0, 256);
+
 	SDL_Color palette[256];
 	int count;
 
@@ -553,7 +600,7 @@ void Font::mapPalette (int start, int length, int newStart, int newLength) {
 			(count * newLength / length) + newStart;
 
 	for (count = 0; count < nCharacters; count++)
-		SDL_SetPalette(characters[count], SDL_LOGPAL, palette, start, length);
+		SDL_SetPaletteColors(characters[count]->format->palette, palette, start, length);
 
 	return;
 
@@ -568,10 +615,16 @@ void Font::restorePalette () {
 	int count;
 
 	for (count = 0; count < nCharacters; count++)
-		video.restoreSurfacePalette(characters[count]);
+		SDL_SetPaletteColors(characters[count]->format->palette, storedPalette->colors, 0, 256);
 
 	return;
 
+}
+
+void Font::setPalette(SDL_Color *colors)
+{
+	for (int index = 0; index < nCharacters; index++)
+		SDL_SetPaletteColors(characters[index]->format->palette, colors, 0, 256);
 }
 
 

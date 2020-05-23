@@ -265,6 +265,7 @@ void JJ1Level::draw () {
 			dst.x = ((canvasW * 4) / 5) - (vX & 3);
 			dst.y = ((canvasH - 33) * 3) / 25;
 			src.y = TTOI(skyOrb + (vX & 3));
+			SDL_SetPaletteColors(tileSet->format->palette, canvas->format->palette->colors, 0, 256);
 			SDL_BlitSurface(tileSet, &src, canvas, &dst);
 
 		}
@@ -310,6 +311,7 @@ void JJ1Level::draw () {
 				dst.x = TTOI(x) - (vX & 31);
 				dst.y = TTOI(y) - (vY & 31);
 				src.y = TTOI(ge->tile);
+				SDL_SetPaletteColors(tileSet->format->palette, canvas->format->palette->colors, 0, 256);
 				SDL_BlitSurface(tileSet, &src, canvas, &dst);
 
 			}
@@ -350,6 +352,7 @@ void JJ1Level::draw () {
 				dst.y = TTOI(y) - (vY & 31);
 				if (ticks & 64) src.y = TTOI(eventSet[ge->event].multiB);
 				else src.y = TTOI(eventSet[ge->event].multiA);
+				SDL_SetPaletteColors(tileSet->format->palette, canvas->format->palette->colors, 0, 256);
 				SDL_BlitSurface(tileSet, &src, canvas, &dst);
 
 			}
@@ -363,6 +366,7 @@ void JJ1Level::draw () {
 				dst.x = TTOI(x) - (vX & 31);
 				dst.y = TTOI(y) - (vY & 31);
 				src.y = TTOI(ge->tile);
+				SDL_SetPaletteColors(tileSet->format->palette, canvas->format->palette->colors, 0, 256);
 				SDL_BlitSurface(tileSet, &src, canvas, &dst);
 
 			}
@@ -404,12 +408,14 @@ void JJ1Level::draw () {
 		src.h = 26 - src.y;
 		dst.x = 248;
 		dst.y = 3;
+		SDL_SetPaletteColors(panelAmmo[ammoType]->format->palette, canvas->format->palette->colors, 0, 256);
 		SDL_BlitSurface(panelAmmo[ammoType], &src, panel, &dst);
 
 	}
 
 	dst.x = 0;
 	dst.y = canvasH - 33;
+	SDL_SetPaletteColors(panel->format->palette, canvas->format->palette->colors, 0, 256);
 	SDL_BlitSurface(panel, NULL, canvas, &dst);
 	drawRect(0, canvasH - 1, SW, 1, LEVEL_BLACK);
 
@@ -417,6 +423,7 @@ void JJ1Level::draw () {
 	// Show panel data
 
 	// Show score
+	panelSmallFont->setPalette(palette);
 	panelSmallFont->showNumber(localPlayer->getScore(), 84, canvasH - 27);
 
 	// Show time remaining
@@ -451,6 +458,7 @@ void JJ1Level::draw () {
 
 		panelSmallFont->showString(":", 225, canvasH - 13);
 		panelSmallFont->showString(";", 233, canvasH - 13);
+		panelSmallFont->setPalette(palette);
 
 	} else {
 

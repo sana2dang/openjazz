@@ -51,10 +51,12 @@ SDL_Surface* createSurface (unsigned char * pixels, int width, int height) {
 	int y;
 
 	// Create the surface
-	ret = SDL_CreateRGBSurface(SDL_HWSURFACE, width, height, 8, 0, 0, 0, 0);
+	ret = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
 
 	// Set the surface's palette
-	video.restoreSurfacePalette(ret);
+	//video.restoreSurfacePalette(ret);
+	SDL_Color palette[256];
+	SDL_SetPaletteColors(ret->format->palette, palette, 0, 256);
 
 	if (pixels) {
 
@@ -104,7 +106,7 @@ Video::Video () {
  */
 void Video::findMaxResolution () {
 
-#ifdef NO_RESIZE
+#if defined NO_RESIZE || defined SDL2
 	maxW = DEFAULT_SCREEN_WIDTH;
 	maxH = DEFAULT_SCREEN_HEIGHT;
 #else
@@ -162,7 +164,11 @@ bool Video::init (int width, int height, bool startFullscreen) {
 
 	}
 
-	setTitle(NULL);
+	#ifdef SDL2
+	SDL_SetWindowTitle(window, "OpenJazz");
+	#else
+	SDL_WM_SetCaption("OpenJazz", NULL);
+	#endif
 
 	findMaxResolution();
 
@@ -188,13 +194,45 @@ bool Video::reset (int width, int height) {
 	if (canvas != screen) SDL_FreeSurface(canvas);
 #endif
 
+
+#ifdef SDL2 // WE HAVE SDL2!!
+
+// The SDL2 window and renderer
+
+// Initalize Color Masks.
+Uint32 redMask, greenMask, blueMask;
+redMask   = 0x000000ff;
+greenMask = 0x0000ff00;
+blueMask  = 0x00ff0000;
+
+window = SDL_CreateWindow("", 0, 0, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC); 
+
+// The buffer where the game puts each frame into.
+screen = SDL_CreateRGBSurface(SDL_SWSURFACE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 8, 0, 0, 0, 0);
+
+// The surface into wich we will convert from 8bit paletted to 32bpp RGB
+helper_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 32, redMask, greenMask, blueMask, 0); 
+
+// THE SDL2 texture
+texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
+	DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT);
+
+// Sure clear the screen first.. always nice.
+SDL_RenderClear(renderer);
+SDL_RenderPresent(renderer); 
+
+#else // WE DO NOT HAVE SDL2...
+
 #ifdef NO_RESIZE
 	screen = SDL_SetVideoMode(DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, 8, FULLSCREEN_FLAGS);
 #else
 	screen = SDL_SetVideoMode(screenW, screenH, 8, fullscreen? FULLSCREEN_FLAGS: WINDOWED_FLAGS);
 #endif
-
 	if (!screen) return false;
+#endif //SDL2
+
+
 
 
 #ifdef SCALE
@@ -253,7 +291,28 @@ void Video::setPalette (SDL_Color *palette) {
 	clearScreen(SDL_MapRGB(screen->format, 0, 0, 0));
 	flip(0);
 
+	#ifdef SDL2
+	/*SDL_Palette *sdlpalette = SDL_AllocPalette(256);
+	SDL_SetPaletteColors(sdlpalette, palette, 0, 256);
+	SDL_SetSurfacePalette(screen, sdlpalette);*/
+	
+	SDL_SetPaletteColors(screen->format->palette, palette, 0, 256);
+
+	printf("*****PALETTE IS SET UP AS:**********");
+
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	for (int i = 0; i < 255; i++) {
+		r = screen->format->palette->colors[i].r;
+		g = screen->format->palette->colors[i].g;
+		b = screen->format->palette->colors[i].b;
+		printf(" entry %d:  %d %d %d \n", i, r, g, b);
+	}
+	#else
 	SDL_SetPalette(screen, SDL_PHYSPAL, palette, 0, 256);
+	#endif
+
 	currentPalette = palette;
 
 	return;
@@ -282,7 +341,11 @@ SDL_Color* Video::getPalette () {
  */
 void Video::changePalette (SDL_Color *palette, unsigned char first, unsigned int amount) {
 
+	#ifdef SDL2
+	SDL_SetPaletteColors(screen->format->palette, palette, first, amount);
+	#else
 	SDL_SetPalette(screen, SDL_PHYSPAL, palette, first, amount);
+	#endif
 
 	return;
 
@@ -296,7 +359,11 @@ void Video::changePalette (SDL_Color *palette, unsigned char first, unsigned int
  */
 void Video::restoreSurfacePalette (SDL_Surface* surface) {
 
+	#ifdef SDL2
+	SDL_SetPaletteColors(surface->format->palette, logicalPalette, 0, 256);
+	#else
 	SDL_SetPalette(surface, SDL_LOGPAL, logicalPalette, 0, 256);
+	#endif
 
 	return;
 
@@ -347,41 +414,6 @@ int Video::getWidth () {
 int Video::getHeight () {
 
 	return screenH;
-
-}
-
-
-/**
- * Sets the window title.
- *
- * @param the title or NULL, to use default
- */
-void Video::setTitle (const char *title) {
-
-	const char titleBase[] = "OpenJazz";
-	char *windowTitle = NULL;
-	int titleLen = strlen(titleBase) + 1;
-
-	if (title != NULL) {
-
-		titleLen = strlen(titleBase) + 3 + strlen(title) + 1;
-
-	}
-
-	windowTitle = new char[titleLen];
-
-	strcpy(windowTitle, titleBase);
-
-	if (title != NULL) {
-
-		strcat(windowTitle, " - ");
-		strcat(windowTitle, title);
-
-	}
-
-	SDL_WM_SetCaption(windowTitle, NULL);
-
-	delete[] windowTitle;
 
 }
 
@@ -438,8 +470,13 @@ bool Video::isFullscreen () {
  */
 void Video::expose () {
 
+	#ifdef SDL2
+	SDL_SetPaletteColors(screen->format->palette, logicalPalette, 0, 256);
+	SDL_SetPaletteColors(screen->format->palette, currentPalette, 0, 256);
+	#else
 	SDL_SetPalette(screen, SDL_LOGPAL, logicalPalette, 0, 256);
 	SDL_SetPalette(screen, SDL_PHYSPAL, currentPalette, 0, 256);
+	#endif
 
 	return;
 
@@ -478,7 +515,9 @@ void Video::update (SDL_Event *event) {
 			break;
     #endif
 
-    #ifndef NO_RESIZE
+    #ifndef SDL2
+    #ifndef NO_RESIZE 
+
 		case SDL_VIDEORESIZE:
 
 			reset(event->resize.w, event->resize.h);
@@ -486,12 +525,14 @@ void Video::update (SDL_Event *event) {
 			break;
     #endif
 
+
 		case SDL_VIDEOEXPOSE:
 
 			expose();
 
 			break;
 
+    #endif //SDL2
 	}
 #endif
 
@@ -537,8 +578,11 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 
 			paletteEffects->apply(shownPalette, false, mspf, effectsStopped);
 
+			#ifdef SDL2
+			SDL_SetPaletteColors(screen->format->palette, shownPalette, 0, 256);
+			#else
 			SDL_SetPalette(screen, SDL_PHYSPAL, shownPalette, 0, 256);
-
+			#endif
 		} else {
 
 			paletteEffects->apply(shownPalette, true, mspf, effectsStopped);
@@ -548,7 +592,34 @@ void Video::flip (int mspf, PaletteEffect* paletteEffects, bool effectsStopped) 
 	}
 
 	// Show what has been drawn
+
+#ifdef SDL2
+	
+	uint8_t r,g,b;
+	int npixels = screen->w * screen->h;
+	uint8_t index;
+	for (int i = 0; i < npixels; i++) {
+		// Use BGRA, same as the texture format
+		index = ((uint8_t*)screen->pixels)[i];
+		r = screen->format->palette->colors[index].r;
+		g = screen->format->palette->colors[index].g;
+		b = screen->format->palette->colors[index].b;
+		//printf ("r %d g %d b %d\n", r, g, b);
+		uint32_t RGBColor = ((r << 24) | (g << 16) | (b << 8)) | (0xff << 0);
+		//memcpy (((uint32_t*)helper_surface->pixels) + i, &RGBColor, 4);
+		((uint32_t*)(helper_surface->pixels))[i] = RGBColor;
+	}
+    SDL_SetPaletteColors(helper_surface->format->palette, canvas->format->palette->colors, 0, 256);
+	SDL_BlitSurface(helper_surface, NULL, helper_surface, NULL); 	
+    
+	SDL_UpdateTexture(texture, NULL, helper_surface->pixels, helper_surface->pitch); 
+
+	// Rendercopy the texture to the renderer, and present on screen!
+	SDL_RenderCopy(renderer, texture, NULL, NULL);
+	SDL_RenderPresent(renderer); 
+#else
 	SDL_Flip(screen);
+#endif  //SDL2
 
 	return;
 
@@ -565,8 +636,6 @@ void Video::clearScreen (int index) {
 #if defined(CAANOO) || defined(WIZ) || defined(GP2X) || defined(GAMESHELL)
 	// always 240 lines cleared to black
 	memset(video.screen->pixels, index, 320*240);
-#elif defined (_3DS)
-	memset(video.screen->pixels, index, 400*240);
 #else
 	SDL_FillRect(canvas, NULL, index);
 #endif

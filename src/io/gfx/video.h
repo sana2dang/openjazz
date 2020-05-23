@@ -24,7 +24,13 @@
 
 #include "paletteeffects.h"
 
+#define SDL2
+
+#ifdef SDL2
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 
 
 // Constants
@@ -90,7 +96,10 @@
 	#define DEFAULT_SCREEN_WIDTH SW
 	#define DEFAULT_SCREEN_HEIGHT SH
 
+#ifndef SDL2
 	#define FULLSCREEN_FLAGS (SDL_FULLSCREEN | SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_HWPALETTE)
+#endif //SDL2
+
 #endif
 
 // Time interval
@@ -103,7 +112,20 @@
 class Video {
 
 	private:
-		SDL_Surface* screen; ///< Output surface
+		
+
+#ifdef SDL2
+		SDL_Window* window;
+		SDL_Renderer* renderer;
+		SDL_Texture* texture;
+		SDL_Surface* helper_surface;
+
+		SDL_Surface  *screen;
+		SDL_Surface  *rgb_screen;
+		SDL_Texture  *_screen;
+		SDL_Window   *_window;
+		SDL_Renderer *_renderer;
+#endif  // SDL2
 
 		// Palettes
 		SDL_Color*   currentPalette; ///< Current palette
@@ -127,7 +149,7 @@ class Video {
 
 		bool       init                  (int width, int height, bool startFullscreen);
 
-		bool       reset                 (int width, int height);
+		bool       reset                (int width, int height);
 
 		void       setPalette            (SDL_Color *palette);
 		SDL_Color* getPalette            ();
@@ -138,7 +160,6 @@ class Video {
 		int        getMaxHeight          ();
 		int        getWidth              ();
 		int        getHeight             ();
-		void       setTitle              (const char *title);
 #ifdef SCALE
 		int        getScaleFactor        ();
 		int        setScaleFactor        (int newScaleFactor);

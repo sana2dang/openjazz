@@ -386,7 +386,12 @@ int JJ1Level::loadTiles (char* fileName) {
 	tiles = pos >> 10;
 
 	tileSet = createSurface(buffer, TTOI(1), TTOI(tiles));
+
+	#ifdef SDL2
+	SDL_SetColorKey(tileSet, SDL_TRUE, TKEY);
+	#else
 	SDL_SetColorKey(tileSet, SDL_SRCCOLORKEY, TKEY);
+	#endif
 
 	delete[] buffer;
 
@@ -411,7 +416,6 @@ int JJ1Level::load (char* fileName, bool checkpoint) {
 	unsigned char* buffer;
 	const char* ext;
 	char* string = NULL;
-	char* levelname = NULL;
 	int tiles;
 	int count, x, y, type;
 	unsigned char startX, startY;
@@ -486,9 +490,6 @@ int JJ1Level::load (char* fileName, bool checkpoint) {
 
 	}
 
-	levelname = new char[strlen(string) + 14];
-	strcpy(levelname, string);
-
 	switch (fileName[5]) {
 
 		case '0':
@@ -507,7 +508,6 @@ int JJ1Level::load (char* fileName, bool checkpoint) {
 
 			string[0] = 0;
 			ext = "SECRET LEVEL";
-			strcat(levelname, " ");
 
 			break;
 
@@ -519,18 +519,15 @@ int JJ1Level::load (char* fileName, bool checkpoint) {
 
 	}
 
-	strcat(levelname, ext);
-
 	video.setPalette(menuPalette);
-	video.clearScreen(0);
-	video.setTitle(levelname);
 
-	delete[] levelname;
+	video.clearScreen(0);
 
 	x = (canvasW >> 1) - ((strlen(string) + strlen(ext)) << 2);
 	x = fontmn2->showString("LOADING ", x - 60, (canvasH >> 1) - 16);
 	x = fontmn2->showString(string, x, (canvasH >> 1) - 16);
 	fontmn2->showString(ext, x, (canvasH >> 1) - 16);
+	fontmn2->setPalette(palette);
 
 	delete[] string;
 

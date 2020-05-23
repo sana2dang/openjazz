@@ -24,7 +24,13 @@
 
 #include "OpenJazz.h"
 
+#define SDL2
+
+#ifdef SDL2
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 
 
 // Classes
@@ -39,6 +45,7 @@ class Font {
 		int            nCharacters; ///< Number of symbols
 		unsigned char  lineHeight; ///< Vertical spacing of displayed characters
 		char           map[128]; ///< Maps ASCII values to symbol indices
+		SDL_Palette   *storedPalette;
 
 	public:
 		Font                     (const char *fileName);
@@ -47,10 +54,12 @@ class Font {
 		~Font                    ();
 
 		int  showString          (const char *s, int x, int y);
+		int  showString_2          (const char *s, int x, int y);
 		int  showSceneString     (const unsigned char *s, int x, int y);
 		void showNumber          (int n, int x, int y);
 		void mapPalette          (int start, int length, int newStart, int newLength);
 		void restorePalette      ();
+		void setPalette          (SDL_Color *colors);
 		int  getHeight           ();
 		int  getStringWidth      (const char *string);
 		int  getSceneStringWidth (const unsigned char *string);
@@ -66,7 +75,7 @@ EXTERN Font *fontiny;        /** Taken from .0FN file name */
 EXTERN Font *fontmn1;        /** Taken from .0FN file name */
 EXTERN Font *fontmn2;        /** Taken from .0FN file name */
 EXTERN Font *panelBigFont;   /** Found in PANEL.000 */
-EXTERN Font *panelSmallFont; /** Found in PANEL.000 */
+EXTERN Font *panelSmallFont; /** Found in PANEL.000 */\
 
 #endif
 

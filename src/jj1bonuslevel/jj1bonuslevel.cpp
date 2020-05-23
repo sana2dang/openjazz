@@ -374,7 +374,6 @@ JJ1BonusLevel::JJ1BonusLevel (Game* owner, char * fileName, bool multi) : Level(
 
 	multiplayer = multi;
 
-	video.setTitle("BONUS LEVEL");
 
 	return;
 
@@ -394,8 +393,6 @@ JJ1BonusLevel::~JJ1BonusLevel () {
 	delete[] spriteSet;
 
 	delete font;
-
-	video.setTitle(NULL);
 
 	return;
 
@@ -544,6 +541,8 @@ int JJ1BonusLevel::step () {
 				case 4: // Exit
 
 					return LOST;
+
+					break;
 
 				default:
 
@@ -722,6 +721,7 @@ void JJ1BonusLevel::draw () {
 	font->showNumber(bonusPlayer->getGems() % 10, 68, 0);
 	font->showString("/", 65, 0);
 	font->showNumber(items, 124, 0);
+	font->setPalette(palette);
 
 
 	// Show time remaining
@@ -813,7 +813,11 @@ int JJ1BonusLevel::play () {
 
 		// If paused, draw "PAUSE"
 		if (pmessage && !pmenu)
+		{
 			font->showString("pause", (canvasW >> 1) - 44, 32);
+			font->setPalette(palette);
+		}
+			
 
 
 		// Draw statistics, menu etc.

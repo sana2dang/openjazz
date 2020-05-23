@@ -64,7 +64,11 @@ void Sprite::clearPixels () {
 
 	data = 0;
 	pixels = createSurface(&data, 1, 1);
+	#ifdef SDL2
+	SDL_SetColorKey(pixels, SDL_TRUE, 0);
+	#else
 	SDL_SetColorKey(pixels, SDL_SRCCOLORKEY, 0);
+	#endif
 
 	return;
 
@@ -94,8 +98,11 @@ void Sprite::setPixels (unsigned char *data, int width, int height, unsigned cha
 	if (pixels) SDL_FreeSurface(pixels);
 
 	pixels = createSurface(data, width, height);
+	#ifdef SDL2
+	SDL_SetColorKey(pixels, SDL_TRUE, key);
+	#else
 	SDL_SetColorKey(pixels, SDL_SRCCOLORKEY, key);
-
+	#endif
 	return;
 
 }
@@ -158,7 +165,11 @@ int Sprite::getYOffset () {
  */
 void Sprite::setPalette (SDL_Color *palette, int start, int amount) {
 
+	#ifdef SDL2
+	SDL_SetPaletteColors(pixels->format->palette, palette + start, start, amount);
+	#else
 	SDL_SetPalette(pixels, SDL_LOGPAL, palette + start, start, amount);
+	#endif
 
 	return;
 
@@ -178,7 +189,11 @@ void Sprite::flashPalette (int index) {
 	for (count = 0; count < 256; count++)
 		palette[count].r = palette[count].g = palette[count].b = index;
 
+	#ifdef SDL2
+	SDL_SetPaletteColors(pixels->format->palette, palette, 0, 256);
+	#else
 	SDL_SetPalette(pixels, SDL_LOGPAL, palette, 0, 256);
+	#endif
 
 	return;
 
@@ -190,7 +205,9 @@ void Sprite::flashPalette (int index) {
  */
 void Sprite::restorePalette () {
 
-	video.restoreSurfacePalette(pixels);
+	//video.restoreSurfacePalette(pixels);
+	SDL_Color palette[256];
+	SDL_SetPaletteColors(pixels->format->palette, palette, 0, 256);
 
 	return;
 
@@ -217,7 +234,7 @@ void Sprite::draw (int x, int y, bool includeOffsets) {
 		dst.y += yOffset;
 
 	}
-
+    SDL_SetPaletteColors(pixels->format->palette, canvas->format->palette->colors, 0, 256);
 	SDL_BlitSurface(pixels, NULL, canvas, &dst);
 
 	return;
@@ -236,12 +253,20 @@ void Sprite::drawScaled (int x, int y, fixed scale) {
 
 	unsigned char* srcRow;
 	unsigned char* dstRow;
+#ifdef SDL2
+	uint32_t pixel, key;
+#else
 	unsigned char pixel, key;
+#endif
 	int width, height, fullWidth, fullHeight;
 	int dstX, dstY;
 	int srcX, srcY;
 
+	#ifdef SDL2
+	SDL_GetColorKey(pixels, &key);
+	#else
 	key = pixels->format->colorkey;
+	#endif
 
 	fullWidth = FTOI(pixels->w * scale);
 	if (x < -(fullWidth >> 1)) return; // Off-screen

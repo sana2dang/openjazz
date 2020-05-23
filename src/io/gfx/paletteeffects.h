@@ -23,8 +23,13 @@
 #define _PALETTE_H
 
 #include "OpenJazz.h"
+#define SDL2
 
+#ifdef SDL2
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 
 
 // Constants
