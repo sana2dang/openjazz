@@ -286,7 +286,27 @@ void Level::drawOverlay (unsigned char bg, bool menu, int option,
 		drawRect((canvasW >> 2) - 8, (canvasH >> 1) - 54, 144, 108, bg);
 
 		menuOptions[1] = difficultyOptions[game->getDifficulty()];
+#if 1
+// nx, by trngaje
+		for (count = 0; count < 6; count++) {
 
+			if (count == option)
+			{
+				fontmn2->mapPalette(240, 8, selectedTextPalIndex, textPalSpan);
+				fontmn2->setPalette(menuPalette);
+			}
+			else
+			{
+				fontmn2->mapPalette(240, 8, textPalIndex, textPalSpan);
+				fontmn2->setPalette(canvas->format->palette->colors);
+			}
+			fontmn2->showString(menuOptions[count], canvasW >> 2, (canvasH >> 1) + (count << 4) - 46);
+
+		}
+        fontmn2->setPalette(canvas->format->palette->colors);
+
+#else
+// original
 		for (count = 0; count < 6; count++) {
 
 			// Gray out Save and Load options, as they are unimplemented
@@ -305,7 +325,7 @@ void Level::drawOverlay (unsigned char bg, bool menu, int option,
 		}
 
 		fontmn2->restorePalette();
-
+#endif
 	}
 
 	return;
